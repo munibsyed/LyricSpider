@@ -3,6 +3,12 @@ from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError
 from twisted.internet.error import TimeoutError, TCPTimedOutError
 
+'''
+Munib Syed, 8/11/2017
+Currently, the spider can take in a link to an album on genius.com, iterate through all the songs in the tracklist and extract all relevant lyric text.
+Currently, I have only tested one album.
+'''
+
 class LyricSpider(scrapy.Spider):
 
     name = "LyricSpider"
