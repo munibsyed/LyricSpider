@@ -1,21 +1,25 @@
 import scrapy
+from languageFilter import LanguageFilter
 from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError
 from twisted.internet.error import TimeoutError, TCPTimedOutError
 
 '''
-Munib Syed, 8/11/2017
+Munib Syed, 25/11/2017
 Currently, the spider can take in a link to an album on genius.com, iterate through all the songs in the tracklist and extract all relevant lyric text.
-Currently, I have only tested one album.
+It can then perform some language filtering / categorization on this text. The language filtering is in a fairly untested state at the moment.
+Currently, I have only tested a handful of albums, but results seem consistent across different inputs.
 '''
+#global language filter instance
+languageFilter = LanguageFilter()
 
 class LyricSpider(scrapy.Spider):
 
     name = "LyricSpider"
-    start_urls = ["https://genius.com/Lupe-fiasco-lupe-fiascos-food-and-liquor-tracklist-album-art-lyrics"]
-
+    start_urls = ["https://genius.com/Kendrick-lamar-damn-tracklist-album-art-lyrics"]
     def parse(self, response):
-
+        #this only works for the tracklist page.
+        #should be re-written for the main album page
         for div in response.css("div.track_listing-track"):
             #get href (<a href=...>)
             href = div.css("a::attr(href)")
@@ -24,18 +28,17 @@ class LyricSpider(scrapy.Spider):
                                  errback=self.errback_httpbin)
 
     def parse_song_page(self, response):
-        
+
+        title = response.css("title::text").extract_first()
         lyricsDiv = response.css("div.lyrics")
         #the period is necessary so it only finds paragraphs that are children of lyricsDiv
         lyrics = lyricsDiv.select('.//p//text()')
         lyricsJoined = ""
         for l in lyrics:
             lyricsJoined += l.extract()
-            
-        yield { "Lyrics" : lyricsJoined }
         
-
-
+        yield { "Title" : title, "Is Clean: " : languageFilter.is_dirty(lyricsJoined) }
+   
     def errback_httpbin(self, failure):
         # log all failures
         self.logger.error(repr(failure))
